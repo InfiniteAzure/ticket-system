@@ -5,8 +5,24 @@
 #ifndef TICKET_SYSTEM_BPLUS_H
 #define TICKET_SYSTEM_BPLUS_H
 
-#include <iostream>
 #include <fstream>
+
+void put(char *a ,std::string s) {
+    for (int i = 0;i < s.length();++i) {
+        a[i] = s[i];
+    }
+    a[s.length()] = '\0';
+}
+
+std::string get(char *a) {
+    int i = 0;
+    std::string ans;
+    while(a[i] != '\0') {
+        ans += a[i];
+        i++;
+    }
+    return ans;
+}
 
 template<class Key, class value>
 class bplus {
@@ -85,7 +101,7 @@ public:
             for (int i = 0; i < allocator_size; ++i) {
                 allocator.read(reinterpret_cast<char *>(&alloc[i]), sizeof(int));
             }
-        }
+        }    
     }
 
     ~bplus() {
@@ -318,8 +334,6 @@ public:
                 tree.write(reinterpret_cast<char *>(&r), sizeof(Node));
             }
         }
-
-
     }
 
     void insert(value v, Key k) {
