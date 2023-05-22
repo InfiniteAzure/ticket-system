@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.16)
+project(ticket_system)
+
+set(CMAKE_CXX_STANDARD 14)
+
+add_executable(ticket_system main.cpp bplus.h users.h)
