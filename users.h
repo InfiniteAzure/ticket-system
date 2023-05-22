@@ -5,4 +5,10 @@
 #ifndef TICKET_SYSTEM_USERS_H
 #define TICKET_SYSTEM_USERS_H
 
+class User_system {
+    struct user {
+        
+    };
+};
+
 #endif //TICKET_SYSTEM_USERS_H
