@@ -24,7 +24,7 @@ std::string get(char *a) {
     return ans;
 }
 
-template<class Key, class value>
+template<class Key>
 class bplus {
     const static int MAXS = 16;
 public:
@@ -75,18 +75,7 @@ public:
             tree.seekg(0);
             tree.read(reinterpret_cast<char *>(&I), sizeof(index));
         }
-        save.open(save_name);
-        if (!save.good()) {
-            std::ofstream out;
-            out.open(save_name);
-            write_place = 0;
-            out.write(reinterpret_cast<char *>(&write_place), sizeof(int));
-            out.close();
-            save.open(save_name);
-        } else {
-            save.seekg(0);
-            save.read(reinterpret_cast<char *>(&write_place), sizeof(int));
-        }
+
         allocator.open(allocator_name);
         if (!allocator.good()) {
             std::ofstream out;
@@ -101,7 +90,7 @@ public:
             for (int i = 0; i < allocator_size; ++i) {
                 allocator.read(reinterpret_cast<char *>(&alloc[i]), sizeof(int));
             }
-        }    
+        }
     }
 
     ~bplus() {
@@ -125,13 +114,6 @@ public:
         Node ans;
         tree.read(reinterpret_cast<char *>(&ans), sizeof(Node));
         return ans;
-    }
-
-    int write_value(value v) {
-        save.seekp(sizeof(int) + (write_place) * sizeof(value));
-        save.write(reinterpret_cast<char *>(&v), sizeof(value));
-        write_place++;
-        return write_place - 1;
     }
 
     int get_place() {
@@ -336,7 +318,7 @@ public:
         }
     }
 
-    void insert(value v, Key k) {
+    void insert(int position, Key k) {
         if (I.count == 0) {
             I.write = 1;
             allocator_size = 0;
@@ -345,7 +327,7 @@ public:
             n.father = -1;
             n.save_place = 0;
             n.is_leaf = true;
-            n.pos[0] = write_value(v);
+            n.pos[0] = position;
             n.k[0] = k;
             n.next = -1;
             n.prev = -1;
@@ -363,11 +345,11 @@ public:
                         n.pos[j + 1] = n.pos[j];
                     }
                     n.k[i] = k;
-                    n.pos[i] = write_value(v);
+                    n.pos[i] = position;
                     break;
                 }
                 if (i == n.used_space - 1) {
-                    n.pos[n.used_space] = write_value(v);
+                    n.pos[n.used_space] = position;
                     n.k[n.used_space] = k;
                     break;
                 }
@@ -398,13 +380,13 @@ public:
                         n.pos[j + 1] = n.pos[j];
                     }
                     n.k[i] = k;
-                    n.pos[i] = write_value(v);
+                    n.pos[i] = position;
                     n.used_space++;
                     break;
                 }
                 if (i == n.used_space - 1) {
                     n.k[n.used_space] = k;
-                    n.pos[n.used_space] = write_value(v);
+                    n.pos[n.used_space] = position;
                     n.used_space++;
                     break;
                 }
