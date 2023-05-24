@@ -203,7 +203,25 @@ public:
     }
 
     int query_profile(std::string c_user,std::string u_name) {
-        
+        user *p = find(u_name);
+        if (p == nullptr) {
+            return -1;
+        }
+        user_name us;
+        put(us.user_name_,u_name);
+        int pos = manage.find(us);
+        if (pos == -1) {
+            return -1;
+        }
+        user q;
+        save.seekg(sizeof(int) + pos * sizeof(q));
+        save.write(reinterpret_cast<char *>(&q), sizeof(q));
+        if (c_user != u_name && p->pri <= q.pri) {
+            return -1;
+        }
+        std::cout << get(q.username) << " " << get(q.name) << " "
+                  << get(q.mail) << " " << q.pri;
+        return 0;
     }
 
 
