@@ -14,6 +14,18 @@ void put(char *a ,std::string s) {
     a[s.length()] = '\0';
 }
 
+int to_int(std::string s) {
+    if (s == "nmsl_fuck") {
+        return -1;
+    }
+    int ans = 0;
+    for (int i = 0;i < s.length();++i){
+        ans *= 10;
+        ans += s[i] - '0';
+    }
+    return ans;
+}
+
 std::string get(char *a) {
     int i = 0;
     std::string ans;
@@ -41,8 +53,6 @@ public:
 
     std::string tree_name;
     std::fstream tree;
-    std::string save_name;
-    std::fstream save;
     std::string allocator_name;
     std::fstream allocator;
 
@@ -57,9 +67,8 @@ public:
     int allocator_size;
     int alloc[100008];
 
-    bplus(std::string t, std::string s, std::string a) {
+    bplus(std::string t, std::string a) {
         tree_name = t;
-        save_name = s;
         allocator_name = a;
         tree.open(tree_name);
         if (!tree.good()) {
@@ -97,9 +106,6 @@ public:
         tree.seekp(0);
         tree.write(reinterpret_cast<char *>(&I), sizeof(index));
         tree.close();
-        save.seekp(0);
-        save.write(reinterpret_cast<char *>(&write_place), sizeof(int));
-        save.close();
         allocator.seekp(0);
         allocator.write(reinterpret_cast<char *>(&allocator_size), sizeof(int));
         for (int i = 0; i < allocator_size; ++i) {
@@ -109,7 +115,6 @@ public:
     }
 
     Node get_node(int query) {
-        //TODO
         tree.seekg(sizeof(index) + query * sizeof(Node));
         Node ans;
         tree.read(reinterpret_cast<char *>(&ans), sizeof(Node));

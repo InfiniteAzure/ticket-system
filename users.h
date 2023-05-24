@@ -5,6 +5,10 @@
 #ifndef TICKET_SYSTEM_USERS_H
 #define TICKET_SYSTEM_USERS_H
 
+#include "bplus.h"
+
+std::string not_changed = "nmsl_fuck";
+
 class User_system {
 public:
     struct user {
@@ -64,6 +68,15 @@ public:
     ~User_system() {
         save.seekp(0);
         save.write(reinterpret_cast<char *>(&write_place), sizeof(int));
+        for (int i = 0;i < 50;++i) {
+            while (login[i] != nullptr) {
+                user_node *del = login[i];
+                login[i] = del->next;
+                save.seekp(sizeof(int) + (del->u.save_place) * sizeof(user));
+                save.write(reinterpret_cast<char *>(&del->u), sizeof(user));
+                delete del;
+            }
+        }
         save.close();
     };
 
@@ -128,8 +141,6 @@ public:
         return write_place - 1;
     }
 
-
-
     int init(std::string &username_,std::string &password,std::string &name,std::string &mail) {
         user u;
         user_name us;
@@ -145,7 +156,7 @@ public:
         return 1;
     }
 
-    int add_user(std::string &username_,std::string &password,std::string &name,std::string &mail,
+    int create_user(std::string &username_,std::string &password,std::string &name,std::string &mail,
     std::string &cur_user,int pri_) {
         user *p;
         p = find(cur_user);
@@ -169,6 +180,7 @@ public:
         put(u.mail,mail);
         u.pri = pri_;
         int pos = write_value(u);
+        u.save_place = pos;
         manage.insert(pos,us);
         return 0;
     }
@@ -203,7 +215,7 @@ public:
     }
 
     int query_profile(std::string c_user,std::string u_name) {
-        user *p = find(u_name);
+        user *p = find(c_user);
         if (p == nullptr) {
             return -1;
         }
@@ -213,9 +225,18 @@ public:
         if (pos == -1) {
             return -1;
         }
+        user *qu = find(u_name);
+        if (qu != nullptr) {
+            if (c_user != u_name && p->pri <= qu->pri) {
+                return -1;
+            }
+            std::cout << get(qu->username) << " " << get(qu->name) << " "
+                      << get(qu->mail) << " " << qu->pri;
+            return 0;
+        }
         user q;
         save.seekg(sizeof(int) + pos * sizeof(q));
-        save.write(reinterpret_cast<char *>(&q), sizeof(q));
+        save.read(reinterpret_cast<char *>(&q), sizeof(q));
         if (c_user != u_name && p->pri <= q.pri) {
             return -1;
         }
@@ -224,7 +245,64 @@ public:
         return 0;
     }
 
-
+    int modify_profile(std::string c_user,std::string u_name,std::string password,
+                       std::string name,std::string mail,int pri_) {
+        user *p = find(c_user);
+        if (p == nullptr) {
+            return -1;
+        }
+        if (p->pri <= pri_) {
+            return -1;
+        }
+        user *qu;
+        qu = find(u_name);
+        if (qu != nullptr) {
+            if (u_name != c_user && qu->pri >= p->pri) {
+                return -1;
+            }
+            if (password != not_changed) {
+                put(p->password,password);
+            }
+            if (mail != not_changed) {
+                put(p->mail,mail);
+            }
+            if (name != not_changed) {
+                put(p->name,name);
+            }
+            if (pri_ != -1) {
+                p->pri = pri_;
+            }
+            return 0;
+        }
+        user_name us;
+        put(us.user_name_,u_name);
+        int pos = manage.find(us);
+        if (pos == -1) {
+            return -1;
+        }
+        user u;
+        save.seekg(sizeof(int) + pos * sizeof(u));
+        save.read(reinterpret_cast<char *>(&u), sizeof(u));
+        if (u_name != c_user && qu->pri >= u.pri) {
+            return -1;
+        }
+        if (password != not_changed) {
+            put(u.password,password);
+        }
+        if (mail != not_changed) {
+            put(u.mail,mail);
+        }
+        if (name != not_changed) {
+            put(u.name,name);
+        }
+        if (pri_ != -1) {
+            u.pri = pri_;
+        }
+        save.seekp(sizeof(int) + pos * sizeof(u));
+        save.write(reinterpret_cast<char *>(&u), sizeof(u));
+        query_profile(c_user,u_name);
+        return 0;
+    }
 };
 
 #endif //TICKET_SYSTEM_USERS_H

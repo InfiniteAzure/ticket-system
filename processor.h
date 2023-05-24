@@ -9,6 +9,7 @@ class processor{
 public:
     std::string line;
     std::string words[25];
+    int size;
 
     processor(std::string s) {
         line = s;
@@ -16,14 +17,20 @@ public:
         int pos = 0;
         while (line[i] != '\0') {
             std::string tmp;
-            while (line[i] != ' ') {
+            while (line[i] != ' ' && line[i] != '\0') {
                 tmp += line[i];
                 i++;
             }
+            if (line[i] == '\0') {
+                words[pos] = tmp;
+                pos++;
+                break;
+            }
             i++;
-            words[pos] = line;
+            words[pos] = tmp;
             pos++;
         }
+        size = pos;
     }
 
     ~processor() = default;
