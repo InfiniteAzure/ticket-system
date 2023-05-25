@@ -10,6 +10,9 @@ int main() {
     User_system user_system;
     while(std::getline(std::cin, op)) {
         processor s(op);
+        if (s.words[0] == "[492]") {
+            int j = 1;
+        }
         if (s.words[1] == "add_user") {
             int i = 2;
             std::string st[6];
@@ -69,7 +72,7 @@ int main() {
         } else if (s.words[1] == "modify_profile") {
             int i = 2;
             std::string st[6];
-            for (int j = 0; j < 5; ++j) {
+            for (int j = 0; j < 6; ++j) {
                 st[j] = not_changed;
             }
             while (i <= s.size - 1) {
@@ -97,7 +100,7 @@ int main() {
             }
             std::cout << '\n';
         } else if (s.words[1] == "exit") {
-            std::cout << s.words[0] << " bye";
+            std::cout << s.words[0] << " bye" << '\n';
             break;
         }
     }

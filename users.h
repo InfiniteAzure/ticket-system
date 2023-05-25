@@ -134,9 +134,7 @@ public:
         }
     }
 
-    int write_value(user v) {
-        save.seekp(sizeof(int) + (write_place) * sizeof(v));
-        save.write(reinterpret_cast<char *>(&v), sizeof(v));
+    int write_p(user v) {
         write_place++;
         return write_place - 1;
     }
@@ -150,10 +148,12 @@ public:
         put(u.name,name);
         put(u.mail,mail);
         u.pri = 10;
-        int p = write_value(u);
+        int p = write_p(u);
         u.save_place = p;
+        save.seekp(sizeof(int) + (p) * sizeof(u));
+        save.write(reinterpret_cast<char *>(&u), sizeof(u));
         manage.insert(p,us);
-        return 1;
+        return 0;
     }
 
     int create_user(std::string &username_,std::string &password,std::string &name,std::string &mail,
@@ -179,8 +179,10 @@ public:
         put(u.name,name);
         put(u.mail,mail);
         u.pri = pri_;
-        int pos = write_value(u);
+        int pos = write_p(u);
         u.save_place = pos;
+        save.seekp(sizeof(int) + (pos) * sizeof(u));
+        save.write(reinterpret_cast<char *>(&u), sizeof(u));
         manage.insert(pos,us);
         return 0;
     }
@@ -197,7 +199,7 @@ public:
         }
         user a;
         save.seekg(sizeof(int) + pos * sizeof(a));
-        save.write(reinterpret_cast<char *>(&a), sizeof(a));
+        save.read(reinterpret_cast<char *>(&a), sizeof(a));
         if (get(a.password) != password_) {
             return -1;
         }
@@ -210,19 +212,16 @@ public:
         if (p == nullptr) {
             return -1;
         }
+        user m = *p;
         remove_user(u_name);
+        save.seekp(sizeof(int) + m.save_place * sizeof(user));
+        save.write(reinterpret_cast<char *>(&(m)), sizeof(user));
         return 0;
     }
 
     int query_profile(std::string c_user,std::string u_name) {
         user *p = find(c_user);
         if (p == nullptr) {
-            return -1;
-        }
-        user_name us;
-        put(us.user_name_,u_name);
-        int pos = manage.find(us);
-        if (pos == -1) {
             return -1;
         }
         user *qu = find(u_name);
@@ -233,6 +232,12 @@ public:
             std::cout << get(qu->username) << " " << get(qu->name) << " "
                       << get(qu->mail) << " " << qu->pri;
             return 0;
+        }
+        user_name us;
+        put(us.user_name_,u_name);
+        int pos = manage.find(us);
+        if (pos == -1) {
+            return -1;
         }
         user q;
         save.seekg(sizeof(int) + pos * sizeof(q));
@@ -261,17 +266,19 @@ public:
                 return -1;
             }
             if (password != not_changed) {
-                put(p->password,password);
+                put(qu->password,password);
             }
             if (mail != not_changed) {
-                put(p->mail,mail);
+                put(qu->mail,mail);
             }
             if (name != not_changed) {
-                put(p->name,name);
+                put(qu->name,name);
             }
             if (pri_ != -1) {
-                p->pri = pri_;
+                qu->pri = pri_;
             }
+            std::cout << get(qu->username) << " " << get(qu->name) << " "
+                      << get(qu->mail) << " " << qu->pri;
             return 0;
         }
         user_name us;
@@ -283,7 +290,7 @@ public:
         user u;
         save.seekg(sizeof(int) + pos * sizeof(u));
         save.read(reinterpret_cast<char *>(&u), sizeof(u));
-        if (u_name != c_user && qu->pri >= u.pri) {
+        if (u_name != c_user && p->pri <= u.pri) {
             return -1;
         }
         if (password != not_changed) {
@@ -300,7 +307,8 @@ public:
         }
         save.seekp(sizeof(int) + pos * sizeof(u));
         save.write(reinterpret_cast<char *>(&u), sizeof(u));
-        query_profile(c_user,u_name);
+        std::cout << get(u.username) << " " << get(u.name) << " "
+                  << get(u.mail) << " " << u.pri;
         return 0;
     }
 };
