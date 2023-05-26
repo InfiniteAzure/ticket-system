@@ -7,6 +7,7 @@
 
 #include "tools.h"
 #include "bplus.h"
+#include "vector.hpp"
 
 class train_system {
 public:
@@ -412,6 +413,8 @@ public:
         std::cout << '\n';
     }
 
+
+
     int query_ticket(std::string start, std::string end, date da, bool is_time) {
         station s_s, s_e;
         put(s_s.station_name, start);
@@ -443,6 +446,32 @@ public:
             v_train.push_back(t);
         }
         if (is_time) {
+            timing t[v_ans.size()];
+            for (int i = 0;i < v_ans.size();++i) {
+                int s,e;
+                for (int j = 0;j < v_train[i].station_num;++j) {
+                    if (get(v_train[i].stations[j]) == start) {
+                        s = j;
+                    }
+                    if (get(v_train[i].stations[j]) == start) {
+                        e = j;
+                    }
+                }
+                if (s > e) {
+                    t[i].time = -1;
+                    t[i].index = i;
+                } else {
+                    t[i].time = v_train[i].stop[e - 1] - v_train[i].go[s];
+                    t[i].index = i;
+                }
+            }
+            merge_sort(t,0,v_ans.size() - 1);
+            for (int i = 0;i < v_ans.size();++i) {
+                if (t[i].time != -1) {
+
+
+                }
+            }
 
 
 

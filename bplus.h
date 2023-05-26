@@ -6,7 +6,7 @@
 #define TICKET_SYSTEM_BPLUS_H
 
 #include <fstream>
-#include "src/vector.hpp"
+#include "vector.hpp"
 
 void put(char *a, std::string s) {
     for (int i = 0; i < s.length(); ++i) {

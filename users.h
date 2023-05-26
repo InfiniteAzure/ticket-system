@@ -134,7 +134,7 @@ public:
         }
     }
 
-    int write_p(user v) {
+    int write_p() {
         write_place++;
         return write_place - 1;
     }
@@ -148,7 +148,7 @@ public:
         put(u.name,name);
         put(u.mail,mail);
         u.pri = 10;
-        int p = write_p(u);
+        int p = write_p();
         u.save_place = p;
         save.seekp(sizeof(int) + (p) * sizeof(u));
         save.write(reinterpret_cast<char *>(&u), sizeof(u));
@@ -179,7 +179,7 @@ public:
         put(u.name,name);
         put(u.mail,mail);
         u.pri = pri_;
-        int pos = write_p(u);
+        int pos = write_p();
         u.save_place = pos;
         save.seekp(sizeof(int) + (pos) * sizeof(u));
         save.write(reinterpret_cast<char *>(&u), sizeof(u));

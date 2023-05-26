@@ -5,6 +5,63 @@
 #ifndef TICKET_SYSTEM_TOOLS_H
 #define TICKET_SYSTEM_TOOLS_H
 
+struct timing {
+    int index;
+    int time;
+    friend bool operator<(timing a,timing b) {
+        return a.time < b.time;
+    }
+    friend bool operator>(timing a,timing b) {
+        return a.time > b.time;
+    }
+    friend bool operator<=(timing a,timing b) {
+        return a.time <= b.time;
+    }
+    friend bool operator>=(timing a,timing b) {
+        return a.time >= b.time;
+    }
+    friend bool operator==(timing a,timing b) {
+        return a.time == b.time;
+    }
+};
+
+void merge(timing *a ,int l,int mid,int r) {
+    timing *tmp = new timing[r - l + 1];
+    int cursor1 = l;
+    int cursor2 = mid + 1;
+    for (int i = 0;i < r - l + 1;++i) {
+        if (cursor1 == mid + 1) {
+            tmp[i] = a[cursor2];
+            cursor2++;
+        } else if (cursor2 == r + 1) {
+            tmp[i] = a[cursor1];
+            cursor1++;
+        } else {
+            if (a[cursor2] < a[cursor1]) {
+                tmp[i] = a[cursor2];
+                cursor2++;
+            } else {
+                tmp[i] = a[cursor1];
+                cursor1++;
+            }
+        }
+    }
+    for (int i = l;i <= r;++i) {
+        a[i] = tmp[i - l];
+    }
+    delete []tmp;
+}
+
+void merge_sort(timing *a, int l, int r) {
+    if (l >= r) {
+        return;
+    }
+    int mid = (l + r) / 2;
+    merge_sort(a,l,mid);
+    merge_sort(a,mid + 1,r);
+    merge(a,l,mid,r);
+}
+
 class date {
 public:
     int month = 0;
