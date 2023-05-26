@@ -3,5 +3,5 @@ project(ticket_system)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(ticket_system main.cpp bplus.h users.h processor.h train_system.h tools.h src/vector.hpp
-        src/utility.hpp src/exceptions.hpp)
+add_executable(ticket_system main.cpp bplus.h users.h processor.h train_system.h tools.h vector.hpp
+        utility.hpp exceptions.hpp)
