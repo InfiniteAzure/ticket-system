@@ -2,9 +2,10 @@
 #include "bplus.h"
 #include "users.h"
 #include "processor.h"
+#include "train_system.h"
 
 int main() {
-    freopen("../basic_1/1.in", "r", stdin);
+    freopen("../basic_2/1.in", "r", stdin);
     freopen("../ans.out", "w", stdout);
     std::string op;
     User_system user_system;

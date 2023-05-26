@@ -6,9 +6,10 @@
 #define TICKET_SYSTEM_BPLUS_H
 
 #include <fstream>
+#include "src/vector.hpp"
 
-void put(char *a ,std::string s) {
-    for (int i = 0;i < s.length();++i) {
+void put(char *a, std::string s) {
+    for (int i = 0; i < s.length(); ++i) {
         a[i] = s[i];
     }
     a[s.length()] = '\0';
@@ -19,7 +20,7 @@ int to_int(std::string s) {
         return -1;
     }
     int ans = 0;
-    for (int i = 0;i < s.length();++i){
+    for (int i = 0; i < s.length(); ++i) {
         ans *= 10;
         ans += s[i] - '0';
     }
@@ -29,7 +30,7 @@ int to_int(std::string s) {
 std::string get(char *a) {
     int i = 0;
     std::string ans;
-    while(a[i] != '\0') {
+    while (a[i] != '\0') {
         ans += a[i];
         i++;
     }
@@ -746,6 +747,32 @@ public:
         for (int i = 0; i < n.used_space; ++i) {
             if (n.k[i] == k) {
                 return n.pos[i];
+            }
+        }
+        return -1;
+    }
+
+    int modify(Key k, int pos) {
+        Node n;
+        n = get_node(I.root);
+        while (!n.is_leaf) {
+            for (int i = 0; i < n.used_space; ++i) {
+                if (k < n.k[i]) {
+                    n = get_node(n.pos[i]);
+                    break;
+                }
+                if (i == n.used_space - 1) {
+                    n = get_node(n.pos[n.used_space]);
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < n.used_space; ++i) {
+            if (n.k[i] == k) {
+                n.pos[i] = pos;
+                tree.seekp(sizeof(index) + n.save_place * sizeof(Node));
+                tree.write(reinterpret_cast<char *>(&n), sizeof(Node));
+                return 0;
             }
         }
         return -1;
