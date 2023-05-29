@@ -146,11 +146,14 @@ public:
 
     struct o_t {
         char train_id[35];
+        date depart;
         int save_place;
 
         friend bool operator<(o_t a, o_t b) {
             if (get(a.train_id) != get(b.train_id)) {
                 return get(a.train_id) < get(b.train_id);
+            } else if (!(a.depart == b.depart)) {
+                return a.depart < b.depart;
             } else {
                 return a.save_place < b.save_place;
             }
@@ -159,6 +162,8 @@ public:
         friend bool operator>(o_t a, o_t b) {
             if (get(a.train_id) != get(b.train_id)) {
                 return get(a.train_id) > get(b.train_id);
+            } else if (!(a.depart == b.depart)) {
+                return a.depart > b.depart;
             } else {
                 return a.save_place > b.save_place;
             }
@@ -167,6 +172,8 @@ public:
         friend bool operator<=(o_t a, o_t b) {
             if (get(a.train_id) != get(b.train_id)) {
                 return get(a.train_id) <= get(b.train_id);
+            } else if (!(a.depart == b.depart)) {
+                return a.depart <= b.depart;
             } else {
                 return a.save_place <= b.save_place;
             }
@@ -175,6 +182,8 @@ public:
         friend bool operator>=(o_t a, o_t b) {
             if (get(a.train_id) != get(b.train_id)) {
                 return get(a.train_id) >= get(b.train_id);
+            } else if (!(a.depart == b.depart)) {
+                return a.depart >= b.depart;
             } else {
                 return a.save_place >= b.save_place;
             }
@@ -183,6 +192,8 @@ public:
         friend bool operator==(o_t a, o_t b) {
             if (get(a.train_id) != get(b.train_id)) {
                 return get(a.train_id) == get(b.train_id);
+            } else if (!(a.depart == b.depart)) {
+                return a.depart == b.depart;
             } else {
                 return a.save_place == b.save_place;
             }
@@ -240,9 +251,13 @@ public:
         char train_id[35];
         char start[35];
         char arrive[35];
+        int number;
         int price;
         int cond;
         int save_place;
+        date d;
+        day_time go;
+        day_time arrival;
     };
 
     bplus<train_id> trains;
@@ -437,7 +452,7 @@ public:
                     t.go[i].print();
                     std::cout << ' ';
                 }
-                std::cout << t.prices[i] << ' ';
+                std::cout << t.prices[i + 1] - t.prices[i] << ' ';
                 if (i != t.station_num - 1) {
                     std::cout << t.station_num << '\n';
                 } else {
@@ -479,7 +494,7 @@ public:
                     t.go[i].print();
                     std::cout << ' ';
                 }
-                std::cout << t.prices[i] << ' ';
+                std::cout << t.prices[i + 1] - t.prices[i] << ' ';
                 if (i != t.station_num - 1) {
                     std::cout << t_c.t[i] << '\n';
                 } else {
@@ -736,20 +751,381 @@ public:
         return 0;
     }
 
-    int buy_ticket(order o) {
-        
+    long long buy_ticket(order o, User_system &us) {
+        User_system::user *p = us.find(get(o.user_id));
+        if (p == nullptr) {
+            return -1;
+        }
+        train_id qu;
+        put(qu.train_id_, get(o.train_id));
+        int po = trains.find(qu);
+        if (po == -1) {
+            return -1;
+        }
+        train buyer;
+        save.seekg(sizeof(int) + po * sizeof(train));
+        save.read(reinterpret_cast<char *>(&buyer), sizeof(train));
+        if (!buyer.released) {
+            return -1;
+        }
+        int s = -1, e = -1;
+        for (int i = 0; i < buyer.station_num; ++i) {
+            if (get(o.start) == get(buyer.stations[i])) {
+                s = i;
+            }
+            if (get(o.arrive) == get(buyer.stations[i])) {
+                e = i;
+            }
+        }
+        if (e == -1 || s == -1 || e < s) {
+            return -1;
+        }
+        t_date td;
+        put(td.train_id_, get(o.train_id));
+        td.d = o.d;
+        while (buyer.go[s].hour > 24) {
+            td.d = td.d - 1;
+            buyer.go[s].hour -= 24;
+        }
+        if (td.d < buyer.start || td.d > buyer.finish) {
+            return -1;
+        }
+        int t_pos = tickets.find(td);
+        ticket_cond t_c;
+        ticket_saver.seekg(sizeof(int) + t_pos * sizeof(ticket_cond));
+        ticket_saver.read(reinterpret_cast<char *>(&t_c), sizeof(ticket_cond));
+        for (int i = s; i < e; ++i) {
+            if (t_c.t[i] < o.number) {
+                if (o.cond == -1) {
+                    o_t t;
+                    put(t.train_id, get(o.train_id));
+                    int pos = write_o();
+                    t.save_place = pos;
+                    t_order.insert(pos, t);
+                    o_u u;
+                    put(u.user_name, get(o.user_id));
+                    u.save_place = pos;
+                    u_order.insert(pos, u);
+                    order_saver.seekp(sizeof(int) + pos * sizeof(order));
+                    order_saver.write(reinterpret_cast<char *>(&o), sizeof(order));
+                    return -2;
+                } else {
+                    return -1;
+                }
+            }
+        }
+        o.cond = 0;
+        for (int i = s; i < e; ++i) {
+            t_c.t[i] -= o.number;
+        }
+        ticket_saver.seekp(sizeof(int) + t_pos * sizeof(t_c));
+        ticket_saver.write(reinterpret_cast<char *>(&t_c), sizeof(t_c));
         o_t t;
-        put(t.train_id,get(o.train_id));
+        put(t.train_id, get(o.train_id));
         int pos = write_o();
         t.save_place = pos;
-        t_order.insert(pos,t);
+        t_order.insert(pos, t);
         o_u u;
-        put(u.user_name,get(o.user_id));
+        put(u.user_name, get(o.user_id));
         u.save_place = pos;
-        u_order.insert(pos,u);
+        u_order.insert(pos, u);
+        o.go = buyer.go[s];
+        o.arrival = buyer.stop[e - 1];
+        int i = 0;
+        while (o.go.hour > 24) {
+            o.go.hour -= 24;
+            i++;
+        }
+        o.arrival.hour -= 24 * i;
         order_saver.seekp(sizeof(int) + pos * sizeof(order));
         order_saver.write(reinterpret_cast<char *>(&o), sizeof(order));
-        return 1;
+        long long ans = buyer.prices[e] - buyer.prices[s];
+        o.price = ans;
+        ans *= o.number;
+        return ans;
+    }
+
+    void search_o(o_u query, bplus<o_u> &b, sjtu::vector<int> &vint) {
+        int flag = -1;
+        bplus<o_u>::Node n;
+        if (b.I.root == -1) {
+            std::cout << "null" << '\n';
+            return;
+        }
+        n = b.get_node(b.I.root);
+        while (!n.is_leaf) {
+            for (int i = 0; i < n.used_space; ++i) {
+                if (query < n.k[i]) {
+                    n = b.get_node(n.pos[i]);
+                    break;
+                }
+                if (i == n.used_space - 1) {
+                    n = b.get_node(n.pos[n.used_space]);
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < n.used_space; ++i) {
+            if (get(n.k[i].user_name) == get(query.user_name)) {
+                vint.push_back(n.k[i].save_place);
+                flag = 1;
+            } else if (flag == 1) {
+                flag = 0;
+            }
+        }
+        if (flag == -1) {
+            if (n.next != -1) {
+                n = b.get_node(n.next);
+                for (int i = 0; i < n.used_space; ++i) {
+                    if (get(n.k[i].user_name) == get(query.user_name)) {
+                        vint.push_back(n.k[i].save_place);
+                        flag = 1;
+                    } else if (flag == 1) {
+                        break;
+                    }
+                }
+                if (flag == -1) {
+                    return;
+                }
+            } else {
+                return;
+            }
+        } else {
+            if (flag == 0) {
+                return;
+            }
+        }
+        while (n.next != -1 && flag != 0) {
+            n = b.get_node(n.next);
+            for (int i = 0; i < n.used_space; ++i) {
+                if (get(n.k[i].user_name) == get(query.user_name)) {
+                    vint.push_back(n.k[i].save_place);
+                    flag = 1;
+                } else if (flag == 1) {
+                    flag = 0;
+                }
+            }
+        }
+        std::cout << '\n';
+    }
+
+    void search_ot(o_t query, bplus<o_t> &b, sjtu::vector<int> &vint) {
+        int flag = -1;
+        bplus<o_t>::Node n;
+        if (b.I.root == -1) {
+            std::cout << "null" << '\n';
+            return;
+        }
+        n = b.get_node(b.I.root);
+        while (!n.is_leaf) {
+            for (int i = 0; i < n.used_space; ++i) {
+                if (query < n.k[i]) {
+                    n = b.get_node(n.pos[i]);
+                    break;
+                }
+                if (i == n.used_space - 1) {
+                    n = b.get_node(n.pos[n.used_space]);
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < n.used_space; ++i) {
+            if (get(n.k[i].train_id) == get(query.train_id) &&
+                n.k[i].depart == query.depart) {
+                vint.push_back(n.k[i].save_place);
+                flag = 1;
+            } else if (flag == 1) {
+                flag = 0;
+            }
+        }
+        if (flag == -1) {
+            if (n.next != -1) {
+                n = b.get_node(n.next);
+                for (int i = 0; i < n.used_space; ++i) {
+                    if (get(n.k[i].train_id) == get(query.train_id) &&
+                        n.k[i].depart == query.depart) {
+                        vint.push_back(n.k[i].save_place);
+                        flag = 1;
+                    } else if (flag == 1) {
+                        break;
+                    }
+                }
+                if (flag == -1) {
+                    return;
+                }
+            } else {
+                return;
+            }
+        } else {
+            if (flag == 0) {
+                return;
+            }
+        }
+        while (n.next != -1 && flag != 0) {
+            n = b.get_node(n.next);
+            for (int i = 0; i < n.used_space; ++i) {
+                if (get(n.k[i].train_id) == get(query.train_id) &&
+                    n.k[i].depart == query.depart) {
+                    vint.push_back(n.k[i].save_place);
+                    flag = 1;
+                } else if (flag == 1) {
+                    flag = 0;
+                }
+            }
+        }
+        std::cout << '\n';
+    }
+
+    int query_order(std::string u_name) {
+        o_u o_search;
+        put(o_search.user_name, u_name);
+        o_search.save_place = -1;
+        sjtu::vector<int> v_ans;
+        sjtu::vector<order> v_o;
+        search_o(o_search, u_order, v_ans);
+        for (int i = 0; i < v_ans.size(); ++i) {
+            order o;
+            ticket_saver.seekg(sizeof(int) + v_ans[i] * sizeof(order));
+            ticket_saver.write(reinterpret_cast<char *>(&o), sizeof(order));
+            v_o.push_back(o);
+        }
+        std::cout << v_o.size() << '\n';
+        for (int i = v_o.size() - 1; i >= 0; ++i) {
+            order *print = &v_o[i];
+            if (print->cond == -1) {
+                std::cout << "[pending] ";
+            } else if (print->cond == -2) {
+                std::cout << "[refunded] ";
+            } else {
+                std::cout << "[success] ";
+            }
+            std::cout << get(print->train_id) << ' ';
+            std::cout << get(print->start) << ' ';
+            print->d.print();
+            std::cout << " ";
+            print->go.print();
+            date da = print->d;
+            while (print->arrival.hour > 24) {
+                da = da + 1;
+            }
+            std::cout << " -> ";
+            std::cout << get(print->arrive) << ' ';
+            da.print();
+            std::cout << " ";
+            print->arrival.print();
+            std::cout << " ";
+            std::cout << print->price << " " << print->number << '\n';
+        }
+        return 0;
+    }
+
+    int refund_ticket(std::string u_name, int n) {
+        o_u o_search;
+        put(o_search.user_name, u_name);
+        o_search.save_place = -1;
+        sjtu::vector<int> v_ans;
+        sjtu::vector<order> v_o;
+        search_o(o_search, u_order, v_ans);
+        for (int i = 0; i < v_ans.size(); ++i) {
+            order o;
+            ticket_saver.seekp(sizeof(int) + v_ans[i] * sizeof(order));
+            ticket_saver.write(reinterpret_cast<char *>(&o), sizeof(order));
+            v_o.push_back(o);
+        }
+        if (n > v_o.size()) {
+            return -1;
+        }
+        order *change = &v_o[v_o.size() - n];
+        if (change->cond == -2) {
+            return -1;
+        }
+        if (change->cond == -1) {
+            change->cond = -2;
+            ticket_saver.seekp(sizeof(int) + v_ans[v_ans.size() - n] * sizeof(order));
+            ticket_saver.write(reinterpret_cast<char *>(&*change), sizeof(order));
+        }
+        train_id t;
+        put(t.train_id_, get(change->train_id));
+        int pos = trains.find(t);
+        train sell;
+        save.seekg(sizeof(int) + pos * sizeof(train));
+        save.read(reinterpret_cast<char *>(&sell), sizeof(train));
+        sjtu::vector<int> pending;
+        ticket_cond t_c;
+        date da = change->d;
+        int s, e;
+        for (int i = 0; i < sell.station_num; ++i) {
+            if (get(sell.stations[i]) == get(change->start)) {
+                s = i;
+            }
+            if (get(sell.stations[i]) == get(change->arrive)) {
+                e = i;
+            }
+        }
+        da = da - (sell.go[s].hour / 24);
+        t_date td;
+        td.d = da;
+        put(td.train_id_, get(sell.train_id));
+        int po = tickets.find(td);
+        ticket_saver.seekg(sizeof(int) + po * sizeof(t_c));
+        ticket_saver.read(reinterpret_cast<char *>(&t_c), sizeof(t_c));
+        for (int i = s; i < e; ++i) {
+            t_c.t[i] += change->number;
+        }
+        o_t query;
+        put(query.train_id, get(sell.train_id));
+        query.save_place = -1;
+        query.depart = da;
+        search_ot(query, t_order, pending);
+        sjtu::vector<order> pending_order;
+        for (int i = 0; i < pending.size(); ++i) {
+            order o;
+            order_saver.seekg(sizeof(int) + pending[i] * sizeof(order));
+            order_saver.read(reinterpret_cast<char *>(&o), sizeof(order));
+            pending_order.push_back(o);
+        }
+        for (int i = 0;i < pending.size(); ++i) {
+            if (pending_order[i].cond == -2) {
+                order *c = &pending_order[i];
+                int st,en;
+                for (int j = 0;j < sell.station_num;++i) {
+                    if (get(sell.stations[i]) == get(c->start)) {
+                        st = j;
+                    }
+                    if (get(sell.stations[i]) == get(c->arrive)) {
+                        en = j;
+                    }
+                }
+                bool flag = true;
+                for (int j = st;j < en;++j) {
+                    if (t_c.t[j] < c->number) {
+                        flag = false;
+                    }
+                }
+                if (flag) {
+                    for (int j = st;j < en;++j) {
+                        t_c.t[i] -= c->number;
+                    }
+                    c->cond = 0;
+                }
+                order_saver.seekp(sizeof(int) + pending[i] * sizeof(order));
+                order_saver.write(reinterpret_cast<char *>(&*c), sizeof(order));
+            }
+        }
+        ticket_saver.seekp(sizeof(int) + po * sizeof(t_c));
+        ticket_saver.write(reinterpret_cast<char *>(&t_c), sizeof(t_c));
+        return 0;
+    }
+
+    void clear() {
+        trains.clear();
+        tickets.clear();
+        t_order.clear();
+        u_order.clear();
+        stations.clear();
+        write_place = 0;
+        t_write_place = 0;
+        o_write_place = 0;
     }
 };
 

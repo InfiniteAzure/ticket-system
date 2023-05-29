@@ -311,6 +311,20 @@ public:
                   << get(u.mail) << " " << u.pri;
         return 0;
     }
+
+    void clear() {
+        for (int i = 0;i < 50;++i) {
+            while (login[i] != nullptr) {
+                user_node *del = login[i];
+                login[i] = del->next;
+                save.seekp(sizeof(int) + (del->u.save_place) * sizeof(user));
+                save.write(reinterpret_cast<char *>(&del->u), sizeof(user));
+                delete del;
+            }
+        }
+        manage.clear();
+        write_place = 0;
+    }
 };
 
 #endif //TICKET_SYSTEM_USERS_H

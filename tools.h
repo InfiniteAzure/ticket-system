@@ -5,6 +5,23 @@
 #ifndef TICKET_SYSTEM_TOOLS_H
 #define TICKET_SYSTEM_TOOLS_H
 
+void cut(std::string s,sjtu::vector<std::string> &ans) {
+    int i = 0;
+    while (s[i] != '\0') {
+        std::string tmp;
+        while (s[i] != '|' && s[i] != '\0') {
+            tmp += s[i];
+            i++;
+        }
+        if (s[i] == '\0') {
+            ans.push_back(tmp);
+            break;
+        }
+        i++;
+        ans.push_back(tmp);
+    }
+}
+
 struct timing {
     std::string train_id;
     int index;

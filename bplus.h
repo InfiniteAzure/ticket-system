@@ -777,6 +777,12 @@ public:
         }
         return -1;
     }
+
+    void clear() {
+        I.count = 0;
+        I.root = -1;
+        I.write = 0;
+    }
 };
 
 
