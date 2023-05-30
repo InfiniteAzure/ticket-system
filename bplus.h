@@ -730,6 +730,9 @@ public:
     }
 
     int find(Key k) {
+        if (I.count == 0) {
+            return -1;
+        }
         Node n;
         n = get_node(I.root);
         while (!n.is_leaf) {
@@ -753,6 +756,9 @@ public:
     }
 
     int modify(Key k, int pos) {
+        if (I.count == 0) {
+            return -1;
+        }
         Node n;
         n = get_node(I.root);
         while (!n.is_leaf) {

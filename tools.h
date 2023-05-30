@@ -296,7 +296,10 @@ public:
     int hour = 0;
     int minute = 0;
 
-    day_time();
+    day_time() {
+        hour = 0;
+        minute = 0;
+    };
 
     day_time(std::string s) {
         hour = (s[0] - '0') * 10 + s[1] - '0';
@@ -351,6 +354,7 @@ public:
         a.minute += b;
         a.hour += a.minute / 60;
         a.minute = a.minute % 60;
+        return a;
     }
 
     friend int operator-(day_time a, day_time b) {

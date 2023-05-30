@@ -422,7 +422,7 @@ public:
         put(td.train_id_, t_id);
         td.d = da;
         if (!t.released) {
-            std::cout << t.station_num << '\n';
+            std::cout << get(t.train_id) << " " << t.type << '\n';
             for (int i = 0; i < t.station_num; ++i) {
                 std::cout << get(t.stations[i]) << " ";
                 if (i == 0) {
@@ -454,7 +454,7 @@ public:
                 }
                 std::cout << t.prices[i + 1] - t.prices[i] << ' ';
                 if (i != t.station_num - 1) {
-                    std::cout << t.station_num << '\n';
+                    std::cout << t.seat_num << '\n';
                 } else {
                     std::cout << 'x' << '\n';
                 }
@@ -976,7 +976,12 @@ public:
         std::cout << '\n';
     }
 
-    int query_order(std::string u_name) {
+    int query_order(std::string u_name,User_system &u) {
+        User_system::user *p;
+        p = u.find(u_name);
+        if (p == nullptr) {
+            return -1;
+        }
         o_u o_search;
         put(o_search.user_name, u_name);
         o_search.save_place = -1;
@@ -1019,7 +1024,12 @@ public:
         return 0;
     }
 
-    int refund_ticket(std::string u_name, int n) {
+    int refund_ticket(std::string u_name, int n,User_system &u) {
+        User_system::user *p;
+        p = u.find(u_name);
+        if (p == nullptr) {
+            return -1;
+        }
         o_u o_search;
         put(o_search.user_name, u_name);
         o_search.save_place = -1;
