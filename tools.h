@@ -205,7 +205,7 @@ public:
     }
 
     void print() {
-        std::cout << month / 10 << month % 10 << ":" << day / 10 << day % 10;
+        std::cout << month / 10 << month % 10 << "-" << day / 10 << day % 10;
     }
 
     friend bool operator<(date a, date b) {
@@ -270,8 +270,12 @@ public:
 
     friend date operator-(date a, int x) {
         a.day -= x;
-        if (a.day < 0) {
-            a.day += 31;
+        if (a.day <= 0) {
+            if (a.month == 7) {
+                a.day += 30;
+            } else {
+                a.day += 31;
+            }
             a.month--;
         }
         return a;

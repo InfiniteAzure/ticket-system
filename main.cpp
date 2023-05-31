@@ -5,7 +5,7 @@
 #include "train_system.h"
 
 int main() {
-    freopen("../basic_2/1.in", "r", stdin);
+    freopen("../basic_3/4.in", "r", stdin);
     freopen("../ans.out", "w", stdout);
     std::string op;
     User_system user_system;
@@ -190,9 +190,11 @@ int main() {
                 i += 2;
             }
             date da(st[1]);
-            t_system.query_train(st[0], da);
+            int ans = t_system.query_train(st[0], da);
+            if (ans == -1) {
+                std::cout << ans << '\n';
+            }
         } else if (s.words[1] == "query_ticket") {
-            std::cout << s.words[0] << " ";
             int i = 2;
             std::string st[4];
             st[3] = not_changed;
@@ -210,7 +212,7 @@ int main() {
                 i += 2;
             }
             date da(st[2]);
-            t_system.query_ticket(st[0],st[1],da,!(st[3] == "price"));
+            t_system.query_ticket(st[0],st[1],da,!(st[3] == "cost"),s.words[0]);
         } else if (s.words[1] == "query_transfer") {
             std::cout << s.words[0] << " " << "transfer nmsl" << '\n' << '\n';
         } else if (s.words[1] == "buy_ticket") {
@@ -249,6 +251,9 @@ int main() {
             } else {
                 o.cond = 0;
             }
+            if (s.words[0] == "[21589]") {
+                int nmsl = 0;
+            }
             long long ans = t_system.buy_ticket(o,user_system);
             if (ans == -2) {
                 std::cout << s.words[0] << " queue" << '\n';
@@ -258,6 +263,7 @@ int main() {
                 std::cout << s.words[0] << " " << ans << '\n';
             }
         } else if (s.words[1] == "query_order") {
+
             std::cout << s.words[0] << " ";
             int ans = t_system.query_order(s.words[3],user_system);
             if (ans == -1) {
