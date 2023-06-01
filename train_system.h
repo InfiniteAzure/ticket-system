@@ -456,7 +456,7 @@ public:
                     t.go[i].print();
                     std::cout << ' ';
                 }
-                std::cout << t.prices[i + 1] << ' ';
+                std::cout << t.prices[i] << ' ';
                 if (i != t.station_num - 1) {
                     std::cout << t.seat_num << '\n';
                 } else {
@@ -827,6 +827,7 @@ public:
                 put(t.train_id, get(o.train_id));
                 int pos = write_o();
                 t.save_place = pos;
+                t.depart = td.d;
                 t_order.insert(pos, t);
                 o_u u;
                 put(u.user_name, get(o.user_id));
@@ -859,6 +860,7 @@ public:
         put(t.train_id, get(o.train_id));
         int pos = write_o();
         t.save_place = pos;
+        t.depart = td.d;
         t_order.insert(pos, t);
         o_u u;
         put(u.user_name, get(o.user_id));
@@ -1066,25 +1068,22 @@ public:
         put(o_search.user_name, u_name);
         o_search.save_place = -1;
         sjtu::vector<int> v_ans;
-        sjtu::vector<order> v_o;
+        order o;
         search_o(o_search, u_order, v_ans);
-        for (int i = 0; i < v_ans.size(); ++i) {
-            order o;
-            order_saver.seekg(sizeof(int) + v_ans[i] * sizeof(order));
-            order_saver.read(reinterpret_cast<char *>(&o), sizeof(order));
-            v_o.push_back(o);
-        }
-        if (n > v_o.size()) {
+        if (n > v_ans.size()) {
             return -1;
         }
-        order *change = &v_o[v_o.size() - n];
+        order_saver.seekg(sizeof(int) + v_ans[v_ans.size() - n] * sizeof(order));
+        order_saver.read(reinterpret_cast<char *>(&o), sizeof(order));
+        order *change = &o;
         if (change->cond == -2) {
             return -1;
         }
         if (change->cond == -1) {
             change->cond = -2;
-            ticket_saver.seekp(sizeof(int) + v_ans[v_ans.size() - n] * sizeof(order));
-            ticket_saver.write(reinterpret_cast<char *>(&*change), sizeof(order));
+            order_saver.seekp(sizeof(int) + v_ans[v_ans.size() - n] * sizeof(order));
+            order_saver.write(reinterpret_cast<char *>(&*change), sizeof(order));
+            return 0;
         }
         change->cond = -2;
         train_id t;
@@ -1095,7 +1094,6 @@ public:
         save.read(reinterpret_cast<char *>(&sell), sizeof(train));
         sjtu::vector<int> pending;
         ticket_cond t_c;
-        date da = change->d;
         int s, e;
         for (int i = 0; i < sell.station_num; ++i) {
             if (get(sell.stations[i]) == get(change->start)) {
@@ -1105,6 +1103,7 @@ public:
                 e = i;
             }
         }
+        date da = change->d;
         da = da - (sell.go[s].hour / 24);
         t_date td;
         td.d = da;
@@ -1115,6 +1114,8 @@ public:
         for (int i = s; i < e; ++i) {
             t_c.t[i] += change->number;
         }
+        order_saver.seekp(sizeof(int) + v_ans[v_ans.size() - n] * sizeof(order));
+        order_saver.write(reinterpret_cast<char *>(&*change), sizeof(order));
         o_t query;
         put(query.train_id, get(sell.train_id));
         query.save_place = -1;
@@ -1132,10 +1133,10 @@ public:
                 order *c = &pending_order[i];
                 int st, en;
                 for (int j = 0; j < sell.station_num; ++j) {
-                    if (get(sell.stations[i]) == get(c->start)) {
+                    if (get(sell.stations[j]) == get(c->start)) {
                         st = j;
                     }
-                    if (get(sell.stations[i]) == get(c->arrive)) {
+                    if (get(sell.stations[j]) == get(c->arrive)) {
                         en = j;
                     }
                 }
@@ -1143,11 +1144,12 @@ public:
                 for (int j = st; j < en; ++j) {
                     if (t_c.t[j] < c->number) {
                         flag = false;
+                        break;
                     }
                 }
                 if (flag) {
                     for (int j = st; j < en; ++j) {
-                        t_c.t[i] -= c->number;
+                        t_c.t[j] -= c->number;
                     }
                     c->cond = 0;
                 }
@@ -1157,8 +1159,6 @@ public:
         }
         ticket_saver.seekp(sizeof(int) + po * sizeof(t_c));
         ticket_saver.write(reinterpret_cast<char *>(&t_c), sizeof(t_c));
-        order_saver.seekp(sizeof(int) + v_ans[v_ans.size() - n] * sizeof(order));
-        order_saver.write(reinterpret_cast<char *>(&*change), sizeof(order));
         return 0;
     }
 
