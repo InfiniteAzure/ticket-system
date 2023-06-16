@@ -39,7 +39,7 @@ std::string get(char *a) {
 
 template<class Key>
 class bplus {
-    const static int MAXS = 100;
+    const static int MAXS = 50;
 public:
     struct Node {
         int save_place;
