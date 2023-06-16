@@ -1453,7 +1453,6 @@ public:
                     check = check->next;
                 }
             }
-
         }
 
 
@@ -1542,6 +1541,12 @@ public:
                 n[i] = n[i]->next;
                 delete del;
             }
+        }
+        if (ans_A != nullptr) {
+            delete ans_A;
+        }
+        if (ans_B != nullptr) {
+            delete ans_B;
         }
     }
 
