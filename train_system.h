@@ -595,32 +595,28 @@ public:
                 cursor2++;
             }
         }
-        sjtu::vector<train> v_train;
-        for (int i = 0; i < v_ans.size(); ++i) {
-            train t;
-            save.seekg(sizeof(int) + v_ans[i] * sizeof(train));
-            save.read(reinterpret_cast<char *>(&t), sizeof(train));
-            v_train.push_back(t);
-        }
         if (is_time) {
             timing t[v_ans.size()];
             for (int i = 0; i < v_ans.size(); ++i) {
+                train tr;
+                save.seekg(sizeof(int) + v_ans[i] * sizeof(train));
+                save.read(reinterpret_cast<char *>(&tr), sizeof(train));
                 int s, e;
-                for (int j = 0; j < v_train[i].station_num; ++j) {
-                    if (get(v_train[i].stations[j]) == start) {
+                for (int j = 0; j < tr.station_num; ++j) {
+                    if (get(tr.stations[j]) == start) {
                         s = j;
                     }
-                    if (get(v_train[i].stations[j]) == end) {
+                    if (get(tr.stations[j]) == end) {
                         e = j;
                     }
                 }
                 if (s > e) {
-                    t[i].train_id = get(v_train[i].train_id);
+                    t[i].train_id = get(tr.train_id);
                     t[i].time = -1;
                     t[i].index = i;
                 } else {
-                    t[i].train_id = get(v_train[i].train_id);
-                    t[i].time = v_train[i].stop[e - 1] - v_train[i].go[s];
+                    t[i].train_id = get(tr.train_id);
+                    t[i].time = tr.stop[e - 1] - tr.go[s];
                     t[i].index = i;
                     t[i].s = s;
                     t[i].e = e;
@@ -629,8 +625,10 @@ public:
             merge_sort(t, 0, v_ans.size() - 1);
             int size = 0;
             for (int i = 0; i < v_ans.size(); ++i) {
+                train target;
+                save.seekg(sizeof(int) + v_ans[t[i].index] * sizeof(train));
+                save.read(reinterpret_cast<char *>(&target), sizeof(train));
                 if (t[i].time != -1) {
-                    train target = v_train[t[i].index];
                     date d = da;
                     while (target.go[t[i].s].hour >= 24) {
                         d = d - 1;
@@ -644,7 +642,10 @@ public:
             std::cout << header << ' ' << size << '\n';
             for (int i = 0; i < v_ans.size(); ++i) {
                 if (t[i].time != -1) {
-                    train *target = &v_train[t[i].index];
+                    train tr;
+                    save.seekg(sizeof(int) + v_ans[t[i].index] * sizeof(train));
+                    save.read(reinterpret_cast<char *>(&tr), sizeof(train));
+                    train *target = &tr;
                     date d = da;
                     while (target->go[t[i].s].hour >= 24) {
                         d = d - 1;
@@ -686,34 +687,39 @@ public:
                 }
             }
         } else {
-            pricing pr[v_train.size()];
+            pricing pr[v_ans.size()];
             for (int i = 0; i < v_ans.size(); ++i) {
+                train tr;
+                save.seekg(sizeof(int) + v_ans[i] * sizeof(train));
+                save.read(reinterpret_cast<char *>(&tr), sizeof(train));
                 int s, e;
-                for (int j = 0; j < v_train[i].station_num; ++j) {
-                    if (get(v_train[i].stations[j]) == start) {
+                for (int j = 0; j < tr.station_num; ++j) {
+                    if (get(tr.stations[j]) == start) {
                         s = j;
                     }
-                    if (get(v_train[i].stations[j]) == end) {
+                    if (get(tr.stations[j]) == end) {
                         e = j;
                     }
                 }
                 if (s > e) {
-                    pr[i].train_id = get(v_train[i].train_id);
+                    pr[i].train_id = get(tr.train_id);
                     pr[i].price = -1;
                     pr[i].index = i;
                 } else {
-                    pr[i].train_id = get(v_train[i].train_id);
-                    pr[i].price = v_train[i].prices[e] - v_train[i].prices[s];
+                    pr[i].train_id = get(tr.train_id);
+                    pr[i].price = tr.prices[e] - tr.prices[s];
                     pr[i].index = i;
                     pr[i].s = s;
                     pr[i].e = e;
                 }
             }
-            merge_sort(pr, 0, v_train.size() - 1);
+            merge_sort(pr, 0, v_ans.size() - 1);
             int size = 0;
             for (int i = 0; i < v_ans.size(); ++i) {
                 if (pr[i].price != -1) {
-                    train target = v_train[pr[i].index];
+                    train target;
+                    save.seekg(sizeof(int) + v_ans[pr[i].index] * sizeof(train));
+                    save.read(reinterpret_cast<char *>(&target), sizeof(train));
                     date d = da;
                     while (target.go[pr[i].s].hour >= 24) {
                         d = d - 1;
@@ -727,7 +733,10 @@ public:
             std::cout << header << ' ' << size << '\n';
             for (int i = 0; i < v_ans.size(); ++i) {
                 if (pr[i].price != -1) {
-                    train *target = &v_train[pr[i].index];
+                    train tr;
+                    save.seekg(sizeof(int) + v_ans[pr[i].index] * sizeof(train));
+                    save.read(reinterpret_cast<char *>(&tr), sizeof(train));
+                    train *target = &tr;
                     date d = da;
                     while (target->go[pr[i].s].hour >= 24) {
                         d = d - 1;
@@ -768,7 +777,6 @@ public:
                     }
                 }
             }
-
         }
         return 0;
     }
@@ -1533,12 +1541,6 @@ public:
                 n[i] = n[i]->next;
                 delete del;
             }
-        }
-        if (ans_A != nullptr) {
-            delete ans_A;
-        }
-        if (ans_B != nullptr) {
-            delete ans_B;
         }
     }
 
