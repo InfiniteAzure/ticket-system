@@ -6,8 +6,8 @@
 
 int main() {
     std::ios::sync_with_stdio(0), std::cin.tie(0), std::cout.tie(0);
-    freopen("../basic/1.in", "r", stdin);
-    freopen("../ans.out", "w", stdout);
+    //freopen("../basic/1.in", "r", stdin);
+    //freopen("../ans.out", "w", stdout);
     std::string op;
     User_system user_system;
     train_system t_system;
