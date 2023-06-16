@@ -13,6 +13,9 @@ int main() {
     train_system t_system;
     while (std::getline(std::cin, op)) {
         processor s(op);
+        if (s.words[0] == "[38948]") {
+            int nmsl = 0;
+        }
         if (s.words[1] == "add_user") {
             int i = 2;
             std::string st[6];
@@ -215,7 +218,26 @@ int main() {
             date da(st[2]);
             t_system.query_ticket(st[0],st[1],da,!(st[3] == "cost"),s.words[0]);
         } else if (s.words[1] == "query_transfer") {
-            std::cout << s.words[0] << " " << "transfer nmsl" << '\n' << '\n';
+            std::cout << s.words[0];
+            int i = 2;
+            std::string st[4];
+            st[3] = not_changed;
+            while (i <= s.size - 1) {
+                std::string a = s.words[i];
+                if (a == "-s") {
+                    st[0] = s.words[i + 1];
+                } else if (a == "-t") {
+                    st[1] = s.words[i + 1];
+                } else if (a == "-d") {
+                    st[2] = s.words[i + 1];
+                } else if (a == "-p") {
+                    st[3] = s.words[i + 1];
+                }
+                i += 2;
+            }
+            date da(st[2]);
+            //std::cout << "transfer nmsl" << '\n';
+            t_system.query_transfer(st[0],st[1],da,!(st[3] == "cost"));
         } else if (s.words[1] == "buy_ticket") {
             int i = 2;
             std::string st[7];
@@ -252,9 +274,6 @@ int main() {
             } else {
                 o.cond = 0;
             }
-            if (s.words[0] == "[21589]") {
-                int nmsl = 0;
-            }
             long long ans = t_system.buy_ticket(o,user_system);
             if (ans == -2) {
                 std::cout << s.words[0] << " queue" << '\n';
@@ -264,7 +283,6 @@ int main() {
                 std::cout << s.words[0] << " " << ans << '\n';
             }
         } else if (s.words[1] == "query_order") {
-
             std::cout << s.words[0] << " ";
             int ans = t_system.query_order(s.words[3],user_system);
             if (ans == -1) {

@@ -367,7 +367,7 @@ public:
 };
 
 int day_time_between(date a, day_time a2, date b, day_time b2) {
-    return 1440 * (b - a) + (a2 - b2);
+    return 1440 * (b - a) + (b2 - a2);
 }
 
 #endif //TICKET_SYSTEM_TOOLS_H

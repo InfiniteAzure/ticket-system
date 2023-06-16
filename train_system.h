@@ -466,7 +466,7 @@ public:
         } else {
             int pd = tickets.find(td);
             ticket_cond t_c;
-            ticket_saver.seekp(sizeof(int) + pd * sizeof(ticket_cond));
+            ticket_saver.seekg(sizeof(int) + pd * sizeof(ticket_cond));
             ticket_saver.read(reinterpret_cast<char *>(&t_c), sizeof(ticket_cond));
             std::cout << get(t.train_id) << " " << t.type << '\n';
             for (int i = 0; i < t.station_num; ++i) {
@@ -512,7 +512,7 @@ public:
     void search(station query, bplus<station> &b, sjtu::vector<int> &vint) {
         int flag = -1;
         bplus<station>::Node n;
-        if (b.I.root == -1) {
+        if (b.I.count == 0) {
             return;
         }
         n = b.get_node(b.I.root);
@@ -885,7 +885,7 @@ public:
     void search_o(o_u query, bplus<o_u> &b, sjtu::vector<int> &vint) {
         int flag = -1;
         bplus<o_u>::Node n;
-        if (b.I.root == -1) {
+        if (b.I.count == 0) {
             return;
         }
         n = b.get_node(b.I.root);
@@ -947,7 +947,7 @@ public:
     void search_ot(o_t query, bplus<o_t> &b, sjtu::vector<int> &vint) {
         int flag = -1;
         bplus<o_t>::Node n;
-        if (b.I.root == -1) {
+        if (b.I.count == 0) {
             return;
         }
         n = b.get_node(b.I.root);
@@ -1123,10 +1123,10 @@ public:
         search_ot(query, t_order, pending);
         sjtu::vector<order> pending_order;
         for (int i = 0; i < pending.size(); ++i) {
-            order o;
+            order ors;
             order_saver.seekg(sizeof(int) + pending[i] * sizeof(order));
-            order_saver.read(reinterpret_cast<char *>(&o), sizeof(order));
-            pending_order.push_back(o);
+            order_saver.read(reinterpret_cast<char *>(&ors), sizeof(order));
+            pending_order.push_back(ors);
         }
         for (int i = 0; i < pending.size(); ++i) {
             if (pending_order[i].cond == -1) {
@@ -1160,6 +1160,363 @@ public:
         ticket_saver.seekp(sizeof(int) + po * sizeof(t_c));
         ticket_saver.write(reinterpret_cast<char *>(&t_c), sizeof(t_c));
         return 0;
+    }
+
+    struct hash_node {
+        std::string train_id;
+        std::string station;
+        int place;
+        hash_node *next = nullptr;
+    };
+
+    int hash(std::string s) {
+        int ans = 0;
+        for (int i = 0; i < s.length(); ++i) {
+            ans *= 5;
+            int n;
+            if (s[i] < 0) {
+                n = s[i] * -1;
+            } else {
+                n = s[i];
+            }
+            ans += n;
+            ans = ans % 47;
+        }
+        return ans;
+    }
+
+    void query_transfer(std::string start, std::string finish, date da, bool is_time) {
+        sjtu::vector<int> train_A;
+        sjtu::vector<int> train_B;
+        station s_start, s_finish;
+        put(s_start.station_name, start);
+        put(s_finish.station_name, finish);
+        s_start.save_place = -1;
+        s_finish.save_place = -1;
+        search(s_start, stations, train_A);
+        search(s_finish, stations, train_B);
+        sjtu::vector<train> A_station, B_station;
+        for (int i = 0; i < train_A.size(); ++i) {
+            train tmp;
+            save.seekg(sizeof(int) + train_A[i] * sizeof(train));
+            save.read(reinterpret_cast<char *>(&tmp), sizeof(train));
+            A_station.push_back(tmp);
+        }
+        for (int i = 0; i < train_B.size(); ++i) {
+            train tmp;
+            save.seekg(sizeof(int) + train_B[i] * sizeof(train));
+            save.read(reinterpret_cast<char *>(&tmp), sizeof(train));
+            B_station.push_back(tmp);
+        }
+        hash_node *n[50] = {nullptr};
+        for (int i = 0; i < train_A.size(); ++i) {
+            train *t = &A_station[i];
+            bool flag = false;
+            for (int j = 0; j < t->station_num; ++j) {
+                if (flag) {
+                    int p = hash(get(t->stations[j]));
+                    hash_node *no = new hash_node;
+                    no->train_id = get(t->train_id);
+                    no->station = get(t->stations[j]);
+                    no->next = n[p];
+                    no->place = i;
+                    n[p] = no;
+                } else if (get(t->stations[j]) == start) {
+                    flag = true;
+                }
+            }
+        }
+        train *ans_A = nullptr;
+        train *ans_B = nullptr;
+        int time = 100000000;
+        int price = 1000000000;
+        date ans_A_go,ans_B_go;
+        day_time ans_t1,ans_t2,ans_t3,ans_t4;
+        std::string mid;
+        int price1,price2;
+        for (int i = 0; i < train_B.size(); ++i) {
+            train *t = &B_station[i];
+            for (int j = 0; j < t->station_num; ++j) {
+                if (get(t->stations[j]) == finish) {
+                    break;
+                }
+                int p = hash(get(t->stations[j]));
+                hash_node *check = n[p];
+                int as,af,bs,bf;
+                while (check != nullptr) {
+                    if (check->station == get(t->stations[j])
+                        && check->train_id != get(t->train_id)) {
+                        train *A = &A_station[check->place];
+                        train *B = &B_station[i];
+                        date A_go = da;
+                        day_time t1, t2, t3, t4;
+                        for (int k = 0; k < A->station_num; ++k) {
+                            if (get(A->stations[k]) == start) {
+                                t1 = A->go[k];
+                                as = k;
+                            }
+                            if (get(A->stations[k]) == check->station) {
+                                t2 = A->stop[k - 1];
+                                af = k;
+                            }
+                        }
+                        for (int k = 0; k < B->station_num; ++k) {
+                            if (get(B->stations[k]) == check->station) {
+                                t3 = B->go[k];
+                                bs = k;
+                            }
+                            if (get(B->stations[k]) == finish) {
+                                t4 = B->stop[k - 1];
+                                bf = k;
+                            }
+                        }
+                        A_go = da - t1.hour / 24;
+                        if (A_go >= A->start && A_go <= A->finish) {
+                            day_time A_arrive;
+                            A_arrive = t2;
+                            A_arrive.hour = t2.hour % 24;
+                            date mid_arrive;
+                            mid_arrive = A_go + t2.hour / 24;
+                            day_time B_arrive;
+                            B_arrive = t3;
+                            B_arrive.hour = B_arrive.hour % 24;
+                            date B_go;
+                            B_go = mid_arrive;
+                            B_go = B_go - t3.hour / 24;
+                            day_time mid_arr;
+                            mid_arr = t2;
+                            mid_arr.hour = mid_arr.hour % 24;
+                            if (mid_arr > B_arrive) {
+                                B_go = B_go + 1;
+                            }
+                            if (B_go <= B->finish) {
+                                if (B_go < B->start) {
+                                    B_go = B->start;
+                                }
+                                int ans_time = day_time_between(A_go, t1, B_go, t4);
+                                int ans_price = A->prices[af] - A->prices[as] + B->prices[bf] - B->prices[bs];
+                                if (is_time) {
+                                    if (time > ans_time) {
+                                        time = ans_time;
+                                        price = ans_price;
+                                        ans_A = A;
+                                        ans_B = B;
+                                        ans_A_go = A_go;
+                                        ans_B_go = B_go;
+                                        ans_t1 = t1;
+                                        ans_t2 = t2;
+                                        ans_t3 = t3;
+                                        ans_t4 = t4;
+                                        mid = check->station;
+                                        price1 = A->prices[af] - A->prices[as];
+                                        price2 = B->prices[bf] - B->prices[bs];
+                                    } else if (time == ans_time) {
+                                        if (price > ans_price) {
+                                            time = ans_time;
+                                            price = ans_price;
+                                            ans_A = A;
+                                            ans_B = B;
+                                            ans_A_go = A_go;
+                                            ans_B_go = B_go;
+                                            ans_t1 = t1;
+                                            ans_t2 = t2;
+                                            ans_t3 = t3;
+                                            ans_t4 = t4;
+                                            mid = check->station;
+                                            price1 = A->prices[af] - A->prices[as];
+                                            price2 = B->prices[bf] - B->prices[bs];
+                                        } else if (price == ans_price) {
+                                            if (get(A->train_id) < get(ans_A->train_id)) {
+                                                time = ans_time;
+                                                price = ans_price;
+                                                ans_A = A;
+                                                ans_B = B;
+                                                ans_A_go = A_go;
+                                                ans_B_go = B_go;
+                                                ans_t1 = t1;
+                                                ans_t2 = t2;
+                                                ans_t3 = t3;
+                                                ans_t4 = t4;
+                                                mid = check->station;
+                                                price1 = A->prices[af] - A->prices[as];
+                                                price2 = B->prices[bf] - B->prices[bs];
+                                            } else if (get(A->train_id) == get(ans_A->train_id)) {
+                                                if (get(B->train_id) < get(ans_B->train_id)) {
+                                                    time = ans_time;
+                                                    price = ans_price;
+                                                    ans_A = A;
+                                                    ans_B = B;
+                                                    ans_A_go = A_go;
+                                                    ans_B_go = B_go;
+                                                    ans_t1 = t1;
+                                                    ans_t2 = t2;
+                                                    ans_t3 = t3;
+                                                    ans_t4 = t4;
+                                                    mid = check->station;
+                                                    price1 = A->prices[af] - A->prices[as];
+                                                    price2 = B->prices[bf] - B->prices[bs];
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    if (price > ans_price) {
+                                        time = ans_time;
+                                        price = ans_price;
+                                        ans_A = A;
+                                        ans_B = B;
+                                        ans_A_go = A_go;
+                                        ans_B_go = B_go;
+                                        ans_t1 = t1;
+                                        ans_t2 = t2;
+                                        ans_t3 = t3;
+                                        ans_t4 = t4;
+                                        mid = check->station;
+                                        price1 = A->prices[af] - A->prices[as];
+                                        price2 = B->prices[bf] - B->prices[bs];
+                                    } else if (price == ans_price) {
+                                        if (time > ans_time) {
+                                            time = ans_time;
+                                            price = ans_price;
+                                            ans_A = A;
+                                            ans_B = B;
+                                            ans_A_go = A_go;
+                                            ans_B_go = B_go;
+                                            ans_t1 = t1;
+                                            ans_t2 = t2;
+                                            ans_t3 = t3;
+                                            ans_t4 = t4;
+                                            mid = check->station;
+                                            price1 = A->prices[af] - A->prices[as];
+                                            price2 = B->prices[bf] - B->prices[bs];
+                                        } else if (time == ans_time) {
+                                            if (get(A->train_id) < get(ans_A->train_id)) {
+                                                time = ans_time;
+                                                price = ans_price;
+                                                ans_A = A;
+                                                ans_B = B;
+                                                ans_A_go = A_go;
+                                                ans_B_go = B_go;
+                                                ans_t1 = t1;
+                                                ans_t2 = t2;
+                                                ans_t3 = t3;
+                                                ans_t4 = t4;
+                                                mid = check->station;
+                                                price1 = A->prices[af] - A->prices[as];
+                                                price2 = B->prices[bf] - B->prices[bs];
+                                            } else if (get(A->train_id) == get(ans_A->train_id)) {
+                                                if (get(B->train_id) < get(ans_B->train_id)) {
+                                                    time = ans_time;
+                                                    price = ans_price;
+                                                    ans_A = A;
+                                                    ans_B = B;
+                                                    ans_A_go = A_go;
+                                                    ans_B_go = B_go;
+                                                    ans_t1 = t1;
+                                                    ans_t2 = t2;
+                                                    ans_t3 = t3;
+                                                    ans_t4 = t4;
+                                                    mid = check->station;
+                                                    price1 = A->prices[af] - A->prices[as];
+                                                    price2 = B->prices[bf] - B->prices[bs];
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    check = check->next;
+                }
+            }
+        }
+        if (ans_A == nullptr) {
+            std::cout << " 0" << '\n';
+        } else {
+            std::cout << " " << get(ans_A->train_id) << " " << start << " ";
+            da.print();
+            std::cout << " ";
+            ans_t1.hour = ans_t1.hour % 24;
+            ans_t1.print();
+            std::cout << " -> ";
+            std::cout << mid << " ";
+            date da1;
+            da1 = ans_A_go + ans_t2.hour / 24;
+            da1.print();
+            std::cout << " ";
+            ans_t2.hour = ans_t2.hour % 24;
+            ans_t2.print();
+            std::cout << " ";
+            std::cout << price1 << " ";
+            t_date td1;
+            put(td1.train_id_,get(ans_A->train_id));
+            td1.d = ans_A_go;
+            int pd = tickets.find(td1);
+            ticket_cond tc1;
+            ticket_saver.seekg(sizeof(int) + pd * sizeof(ticket_cond));
+            ticket_saver.read(reinterpret_cast<char *>(&tc1), sizeof(ticket_cond));
+            int seats1 = ans_A->seat_num;
+            bool flag = false;
+            for (int i = 0;i < ans_A->station_num;++i) {
+                if (get(ans_A->stations[i]) == start) {
+                    flag = true;
+                }
+                if (get(ans_A->stations[i]) == mid) {
+                    break;
+                }
+                if (flag) {
+                    seats1 = std::min(seats1,tc1.t[i]);
+                }
+            }
+            std::cout << seats1 << '\n';
+
+            std::cout << get(ans_B->train_id) << " " << mid << " ";
+            date da3;
+            da3 = ans_B_go + ans_t3.hour / 24;
+            da3.print();
+            std::cout << " ";
+            ans_t3.hour = ans_t3.hour % 24;
+            ans_t3.print();
+            std::cout << " -> ";
+            std::cout << finish << " ";
+            date da2;
+            da2 = ans_B_go + ans_t4.hour / 24;
+            da2.print();
+            std::cout << " ";
+            ans_t4.hour = ans_t4.hour % 24;
+            ans_t4.print();
+            std::cout << " ";
+            std::cout << price2 << " ";
+            t_date td2;
+            put(td2.train_id_,get(ans_B->train_id));
+            td2.d = ans_B_go;
+            int pd2 = tickets.find(td2);
+            ticket_cond tc2;
+            ticket_saver.seekg(sizeof(int) + pd2 * sizeof(ticket_cond));
+            ticket_saver.read(reinterpret_cast<char *>(&tc2), sizeof(ticket_cond));
+            int seats2 = ans_B->seat_num;
+            bool flag2 = false;
+            for (int i = 0;i < ans_B->station_num;++i) {
+                if (get(ans_B->stations[i]) == mid) {
+                    flag2 = true;
+                }
+                if (get(ans_B->stations[i]) == finish) {
+                    break;
+                }
+                if (flag2) {
+                    seats2 = std::min(seats2,tc2.t[i]);
+                }
+            }
+            std::cout << seats2 << '\n';
+        }
+        for (int i = 0;i < 50;++i) {
+            while (n[i] != nullptr) {
+                hash_node *del = n[i];
+                n[i] = n[i]->next;
+                delete del;
+            }
+        }
     }
 
     void clear() {

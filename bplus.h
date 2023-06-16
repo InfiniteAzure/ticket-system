@@ -39,7 +39,7 @@ std::string get(char *a) {
 
 template<class Key>
 class bplus {
-    const static int MAXS = 16;
+    const static int MAXS = 100;
 public:
     struct Node {
         int save_place;
@@ -75,7 +75,7 @@ public:
         if (!tree.good()) {
             std::ofstream out;
             out.open(tree_name);
-            I.root = 0;
+            I.root = -1;
             I.write = 0;
             I.count = 0;
             out.write(reinterpret_cast<char *>(&I), sizeof(index));
