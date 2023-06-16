@@ -64,9 +64,8 @@ public:
     };
 
     index I;
-    int write_place;
     int allocator_size;
-    int alloc[100008];
+    int alloc[108];
 
     bplus(std::string t, std::string a) {
         tree_name = t;
