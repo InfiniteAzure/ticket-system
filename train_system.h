@@ -1198,22 +1198,12 @@ public:
         s_finish.save_place = -1;
         search(s_start, stations, train_A);
         search(s_finish, stations, train_B);
-        sjtu::vector<train> A_station, B_station;
+        hash_node *n[50] = {nullptr};
         for (int i = 0; i < train_A.size(); ++i) {
             train tmp;
             save.seekg(sizeof(int) + train_A[i] * sizeof(train));
             save.read(reinterpret_cast<char *>(&tmp), sizeof(train));
-            A_station.push_back(tmp);
-        }
-        for (int i = 0; i < train_B.size(); ++i) {
-            train tmp;
-            save.seekg(sizeof(int) + train_B[i] * sizeof(train));
-            save.read(reinterpret_cast<char *>(&tmp), sizeof(train));
-            B_station.push_back(tmp);
-        }
-        hash_node *n[50] = {nullptr};
-        for (int i = 0; i < train_A.size(); ++i) {
-            train *t = &A_station[i];
+            train *t = &tmp;
             bool flag = false;
             for (int j = 0; j < t->station_num; ++j) {
                 if (flag) {
@@ -1233,24 +1223,30 @@ public:
         train *ans_B = nullptr;
         int time = 100000000;
         int price = 1000000000;
-        date ans_A_go,ans_B_go;
-        day_time ans_t1,ans_t2,ans_t3,ans_t4;
+        date ans_A_go, ans_B_go;
+        day_time ans_t1, ans_t2, ans_t3, ans_t4;
         std::string mid;
-        int price1,price2;
+        int price1, price2;
         for (int i = 0; i < train_B.size(); ++i) {
-            train *t = &B_station[i];
+            train tmp;
+            save.seekg(sizeof(int) + train_B[i] * sizeof(train));
+            save.read(reinterpret_cast<char *>(&tmp), sizeof(train));
+            train *t = &tmp;
             for (int j = 0; j < t->station_num; ++j) {
                 if (get(t->stations[j]) == finish) {
                     break;
                 }
                 int p = hash(get(t->stations[j]));
                 hash_node *check = n[p];
-                int as,af,bs,bf;
+                int as, af, bs, bf;
                 while (check != nullptr) {
                     if (check->station == get(t->stations[j])
                         && check->train_id != get(t->train_id)) {
-                        train *A = &A_station[check->place];
-                        train *B = &B_station[i];
+                        train tmp1;
+                        save.seekg(sizeof(int) + train_A[check->place] * sizeof(train));
+                        save.read(reinterpret_cast<char *>(&tmp1), sizeof(train));
+                        train *A = &tmp1;
+                        train *B = t;
                         date A_go = da;
                         day_time t1, t2, t3, t4;
                         for (int k = 0; k < A->station_num; ++k) {
@@ -1433,7 +1429,10 @@ public:
                     check = check->next;
                 }
             }
+
         }
+
+
         if (ans_A == nullptr) {
             std::cout << " 0" << '\n';
         } else {
@@ -1453,7 +1452,7 @@ public:
             std::cout << " ";
             std::cout << price1 << " ";
             t_date td1;
-            put(td1.train_id_,get(ans_A->train_id));
+            put(td1.train_id_, get(ans_A->train_id));
             td1.d = ans_A_go;
             int pd = tickets.find(td1);
             ticket_cond tc1;
@@ -1461,7 +1460,7 @@ public:
             ticket_saver.read(reinterpret_cast<char *>(&tc1), sizeof(ticket_cond));
             int seats1 = ans_A->seat_num;
             bool flag = false;
-            for (int i = 0;i < ans_A->station_num;++i) {
+            for (int i = 0; i < ans_A->station_num; ++i) {
                 if (get(ans_A->stations[i]) == start) {
                     flag = true;
                 }
@@ -1469,7 +1468,7 @@ public:
                     break;
                 }
                 if (flag) {
-                    seats1 = std::min(seats1,tc1.t[i]);
+                    seats1 = std::min(seats1, tc1.t[i]);
                 }
             }
             std::cout << seats1 << '\n';
@@ -1492,7 +1491,7 @@ public:
             std::cout << " ";
             std::cout << price2 << " ";
             t_date td2;
-            put(td2.train_id_,get(ans_B->train_id));
+            put(td2.train_id_, get(ans_B->train_id));
             td2.d = ans_B_go;
             int pd2 = tickets.find(td2);
             ticket_cond tc2;
@@ -1500,7 +1499,7 @@ public:
             ticket_saver.read(reinterpret_cast<char *>(&tc2), sizeof(ticket_cond));
             int seats2 = ans_B->seat_num;
             bool flag2 = false;
-            for (int i = 0;i < ans_B->station_num;++i) {
+            for (int i = 0; i < ans_B->station_num; ++i) {
                 if (get(ans_B->stations[i]) == mid) {
                     flag2 = true;
                 }
@@ -1508,12 +1507,12 @@ public:
                     break;
                 }
                 if (flag2) {
-                    seats2 = std::min(seats2,tc2.t[i]);
+                    seats2 = std::min(seats2, tc2.t[i]);
                 }
             }
             std::cout << seats2 << '\n';
         }
-        for (int i = 0;i < 50;++i) {
+        for (int i = 0; i < 50; ++i) {
             while (n[i] != nullptr) {
                 hash_node *del = n[i];
                 n[i] = n[i]->next;
