@@ -791,6 +791,9 @@ public:
         if (!buyer.released) {
             return -1;
         }
+        if (buyer.seat_num < o.number) {
+            return -1;
+        }
         int s = -1, e = -1;
         for (int i = 0; i < buyer.station_num; ++i) {
             if (get(o.start) == get(buyer.stations[i])) {
