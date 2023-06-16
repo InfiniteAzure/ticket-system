@@ -291,6 +291,15 @@ public:
                 a.day += 30;
             }
         }
+        while (b.month > a.month) {
+            if (b.month == 9 || b.month == 8) {
+                b.month--;
+                b.day += 31;
+            } else if (b.month == 7) {
+                b.month--;
+                b.day += 30;
+            }
+        }
         return a.day - b.day;
     }
 };
