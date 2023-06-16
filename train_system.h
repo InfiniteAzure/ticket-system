@@ -1298,8 +1298,10 @@ public:
                                     if (time > ans_time) {
                                         time = ans_time;
                                         price = ans_price;
-                                        ans_A = A;
-                                        ans_B = B;
+                                        ans_A = new train;
+                                        *ans_A = *A;
+                                        ans_B = new train;
+                                        *ans_B = *B;
                                         ans_A_go = A_go;
                                         ans_B_go = B_go;
                                         ans_t1 = t1;
@@ -1313,8 +1315,10 @@ public:
                                         if (price > ans_price) {
                                             time = ans_time;
                                             price = ans_price;
-                                            ans_A = A;
-                                            ans_B = B;
+                                            ans_A = new train;
+                                            *ans_A = *A;
+                                            ans_B = new train;
+                                            *ans_B = *B;
                                             ans_A_go = A_go;
                                             ans_B_go = B_go;
                                             ans_t1 = t1;
@@ -1328,8 +1332,10 @@ public:
                                             if (get(A->train_id) < get(ans_A->train_id)) {
                                                 time = ans_time;
                                                 price = ans_price;
-                                                ans_A = A;
-                                                ans_B = B;
+                                                ans_A = new train;
+                                                *ans_A = *A;
+                                                ans_B = new train;
+                                                *ans_B = *B;
                                                 ans_A_go = A_go;
                                                 ans_B_go = B_go;
                                                 ans_t1 = t1;
@@ -1343,8 +1349,10 @@ public:
                                                 if (get(B->train_id) < get(ans_B->train_id)) {
                                                     time = ans_time;
                                                     price = ans_price;
-                                                    ans_A = A;
-                                                    ans_B = B;
+                                                    ans_A = new train;
+                                                    *ans_A = *A;
+                                                    ans_B = new train;
+                                                    *ans_B = *B;
                                                     ans_A_go = A_go;
                                                     ans_B_go = B_go;
                                                     ans_t1 = t1;
@@ -1362,8 +1370,10 @@ public:
                                     if (price > ans_price) {
                                         time = ans_time;
                                         price = ans_price;
-                                        ans_A = A;
-                                        ans_B = B;
+                                        ans_A = new train;
+                                        *ans_A = *A;
+                                        ans_B = new train;
+                                        *ans_B = *B;
                                         ans_A_go = A_go;
                                         ans_B_go = B_go;
                                         ans_t1 = t1;
@@ -1377,8 +1387,10 @@ public:
                                         if (time > ans_time) {
                                             time = ans_time;
                                             price = ans_price;
-                                            ans_A = A;
-                                            ans_B = B;
+                                            ans_A = new train;
+                                            *ans_A = *A;
+                                            ans_B = new train;
+                                            *ans_B = *B;
                                             ans_A_go = A_go;
                                             ans_B_go = B_go;
                                             ans_t1 = t1;
@@ -1392,8 +1404,10 @@ public:
                                             if (get(A->train_id) < get(ans_A->train_id)) {
                                                 time = ans_time;
                                                 price = ans_price;
-                                                ans_A = A;
-                                                ans_B = B;
+                                                ans_A = new train;
+                                                *ans_A = *A;
+                                                ans_B = new train;
+                                                *ans_B = *B;
                                                 ans_A_go = A_go;
                                                 ans_B_go = B_go;
                                                 ans_t1 = t1;
@@ -1407,8 +1421,10 @@ public:
                                                 if (get(B->train_id) < get(ans_B->train_id)) {
                                                     time = ans_time;
                                                     price = ans_price;
-                                                    ans_A = A;
-                                                    ans_B = B;
+                                                    ans_A = new train;
+                                                    *ans_A = *A;
+                                                    ans_B = new train;
+                                                    *ans_B = *B;
                                                     ans_A_go = A_go;
                                                     ans_B_go = B_go;
                                                     ans_t1 = t1;
