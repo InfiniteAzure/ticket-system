@@ -300,8 +300,8 @@ namespace sjtu {
          * At least two: default constructor, copy constructor
          */
         vector() {
-            start = (T *) malloc(100 * sizeof(T));
-            allocated_size = 100;
+            start = (T *) malloc(10 * sizeof(T));
+            allocated_size = 10;
             used_size = 0;
         }
 
